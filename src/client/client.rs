@@ -820,6 +820,14 @@ impl IoTask {
                 return Err(Error::Disconnected);
             }
             Err(e) => {
+                if let Error::StdError(ref std_error) = e {
+                    if let Some(io_error) = (*std_error).downcast_ref::<std::io::Error>() {
+                        if io_error.kind() == std::io::ErrorKind::ConnectionReset {
+                            debug!("IoTask: Received ConnectionReset");
+                            return Err(Error::Disconnected);
+                        }
+                    }
+                }
                 error!("IoTask: Failed to read packet: {:?}", e);
             },
             Ok(p) => {
